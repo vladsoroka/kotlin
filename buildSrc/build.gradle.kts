@@ -2,7 +2,7 @@
 buildscript {
     val buildSrcKotlinVersion: String by extra(findProperty("buildSrc.kotlin.version")?.toString() ?: embeddedKotlinVersion)
     val buildSrcKotlinRepo: String? by extra(findProperty("buildSrc.kotlin.repo") as String?)
-    extra["versions.shadow"] = "2.0.1"
+    extra["versions.shadow"] = "2.0.2"
     extra["versions.intellij-plugin"] = "0.3.0-SNAPSHOT"
     extra["versions.native-platform"] = "0.14"
 
@@ -64,7 +64,7 @@ dependencies {
     compile("net.rubygrapefruit:native-platform:${property("versions.native-platform")}")
     compile("net.rubygrapefruit:native-platform-windows-amd64:${property("versions.native-platform")}")
     compile("net.rubygrapefruit:native-platform-windows-i386:${property("versions.native-platform")}")
-    compile("com.jakewharton.dex:dex-method-list:2.0.0-alpha")
+    compile("com.jakewharton.dex:dex-method-list:2.0.1-alpha")
     // TODO: adding the dep to the plugin breaks the build unexpectedly, resolve and uncomment
 //    compile("org.jetbrains.kotlin:kotlin-gradle-plugin:${rootProject.extra["bootstrap_kotlin_version"]}")
     // Shadow plugin is used in many projects of the main build. Once it's no longer used in buildSrc, please move this dependency to the root project
