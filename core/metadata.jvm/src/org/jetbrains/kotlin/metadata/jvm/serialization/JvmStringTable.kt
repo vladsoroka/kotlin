@@ -95,10 +95,13 @@ open class JvmStringTable(nameResolver: JvmNameResolver? = null) : StringTable {
     }
 
     override fun serializeTo(output: OutputStream) {
+        serialize().writeDelimitedTo(output)
+    }
+
+    fun serialize(): JvmProtoBuf.StringTableTypes =
         with(JvmProtoBuf.StringTableTypes.newBuilder()) {
             addAllRecord(records.map { it.build() })
             addAllLocalName(localNames)
-            build().writeDelimitedTo(output)
+            build()
         }
-    }
 }

@@ -9,13 +9,15 @@ import kotlinx.metadata.ClassVisitor
 import kotlinx.metadata.InconsistentKotlinMetadataException
 import kotlinx.metadata.LambdaVisitor
 import kotlinx.metadata.PackageVisitor
-import kotlinx.metadata.impl.ReadContext
-import kotlinx.metadata.impl.accept
+import kotlinx.metadata.impl.*
 import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.metadata.deserialization.NameResolver
 import org.jetbrains.kotlin.metadata.deserialization.TypeTable
 import org.jetbrains.kotlin.metadata.deserialization.VersionRequirementTable
+import org.jetbrains.kotlin.metadata.jvm.deserialization.BitEncoding
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmNameResolver
 import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
+import org.jetbrains.kotlin.metadata.jvm.serialization.JvmStringTable
 
 sealed class KotlinClassFile(val metadata: KotlinMetadata) {
     class Class internal constructor(
@@ -28,6 +30,21 @@ sealed class KotlinClassFile(val metadata: KotlinMetadata) {
                 v,
                 ReadContext(nameResolver, TypeTable(proto.typeTable), VersionRequirementTable.create(proto.versionRequirementTable))
             )
+        }
+
+        class Writer : ClassWriter() {
+            fun write(
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.Class {
+                val proto = t.build()
+                val d1 = BitEncoding.encodeBytes(proto.toByteArray())
+                val strings = c.strings as JvmStringTable
+                val d2 = strings.strings.toTypedArray()
+                val metadata = KotlinMetadata(KotlinMetadata.CLASS_KIND, metadataVersion, bytecodeVersion, d1, d2, "", "", extraInt)
+                return KotlinClassFile.Class(metadata, proto, JvmNameResolver(strings.serialize(), strings.strings.toTypedArray()))
+            }
         }
     }
 
@@ -42,6 +59,21 @@ sealed class KotlinClassFile(val metadata: KotlinMetadata) {
                 ReadContext(nameResolver, TypeTable(proto.typeTable), VersionRequirementTable.create(proto.versionRequirementTable))
             )
         }
+
+        class Writer : PackageWriter() {
+            fun write(
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.FileFacade {
+                val proto = t.build()
+                val d1 = BitEncoding.encodeBytes(proto.toByteArray())
+                val strings = c.strings as JvmStringTable
+                val d2 = strings.strings.toTypedArray()
+                val metadata = KotlinMetadata(KotlinMetadata.FILE_FACADE_KIND, metadataVersion, bytecodeVersion, d1, d2, "", "", extraInt)
+                return KotlinClassFile.FileFacade(metadata, proto, JvmNameResolver(strings.serialize(), strings.strings.toTypedArray()))
+            }
+        }
     }
 
     class Lambda internal constructor(
@@ -52,16 +84,61 @@ sealed class KotlinClassFile(val metadata: KotlinMetadata) {
         fun accept(v: LambdaVisitor) {
             proto.accept(v, ReadContext(nameResolver, TypeTable(proto.typeTable), VersionRequirementTable.EMPTY))
         }
+
+        class Writer : LambdaWriter() {
+            fun write(
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.Lambda {
+                val proto = t?.build() ?: error("LambdaVisitor.visitFunction has not been called")
+                val d1 = BitEncoding.encodeBytes(proto.toByteArray())
+                val strings = c.strings as JvmStringTable
+                val d2 = strings.strings.toTypedArray()
+                val metadata = KotlinMetadata(
+                    KotlinMetadata.SYNTHETIC_CLASS_KIND, metadataVersion, bytecodeVersion, d1, d2, "", "", extraInt
+                )
+                return KotlinClassFile.Lambda(metadata, proto, JvmNameResolver(strings.serialize(), strings.strings.toTypedArray()))
+            }
+        }
     }
 
     class SyntheticClass internal constructor(
         metadata: KotlinMetadata
-    ) : KotlinClassFile(metadata)
+    ) : KotlinClassFile(metadata) {
+        class Writer {
+            fun write(
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.SyntheticClass {
+                val metadata = KotlinMetadata(
+                    KotlinMetadata.SYNTHETIC_CLASS_KIND, metadataVersion, bytecodeVersion, emptyArray(), emptyArray(), "", "", extraInt
+                )
+                return KotlinClassFile.SyntheticClass(metadata)
+            }
+        }
+    }
 
     class MultiFileClassFacade internal constructor(
         metadata: KotlinMetadata
     ) : KotlinClassFile(metadata) {
         val partClassNames: List<String> = metadata.data1.asList()
+
+        class Writer {
+            fun write(
+                partClassNames: List<String>,
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.MultiFileClassFacade {
+                val metadata = KotlinMetadata(
+                    KotlinMetadata.MULTI_FILE_CLASS_FACADE_KIND, metadataVersion, bytecodeVersion, partClassNames.toTypedArray(),
+                    emptyArray(), "", "", extraInt
+                )
+                return KotlinClassFile.MultiFileClassFacade(metadata)
+            }
+        }
     }
 
     class MultiFileClassPart internal constructor(
@@ -77,6 +154,26 @@ sealed class KotlinClassFile(val metadata: KotlinMetadata) {
                 v,
                 ReadContext(nameResolver, TypeTable(proto.typeTable), VersionRequirementTable.create(proto.versionRequirementTable))
             )
+        }
+
+        class Writer : PackageWriter() {
+            fun write(
+                facadeClassName: String,
+                metadataVersion: IntArray = KotlinMetadata.COMPATIBLE_METADATA_VERSION,
+                bytecodeVersion: IntArray = KotlinMetadata.COMPATIBLE_BYTECODE_VERSION,
+                extraInt: Int = 0
+            ): KotlinClassFile.MultiFileClassPart {
+                val proto = t.build()
+                val d1 = BitEncoding.encodeBytes(proto.toByteArray())
+                val strings = c.strings as JvmStringTable
+                val d2 = strings.strings.toTypedArray()
+                val metadata = KotlinMetadata(
+                    KotlinMetadata.MULTI_FILE_CLASS_PART_KIND, metadataVersion, bytecodeVersion, d1, d2, facadeClassName, "", extraInt
+                )
+                return KotlinClassFile.MultiFileClassPart(
+                    metadata, proto, JvmNameResolver(strings.serialize(), strings.strings.toTypedArray())
+                )
+            }
         }
     }
 
