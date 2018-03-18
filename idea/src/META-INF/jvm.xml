@@ -111,6 +111,13 @@
                                  implementationClass="org.jetbrains.kotlin.idea.debugger.surroundWith.KotlinDebuggerExpressionSurroundDescriptor"/>
 
         <editorNotificationProvider implementation="org.jetbrains.kotlin.idea.versions.UnsupportedAbiVersionNotificationPanelProvider"/>
+
+        <localInspection groupPath="Plugin DevKit"
+                         groupName="Plugin DevKit"
+                         shortName="HighlightAPIUsage"
+                         enabledByDefault="true" level="ERROR"
+                         displayName="Highlight API Usage"
+                         implementationClass="org.jetbrains.kotlin.idea.inspections.api.HighlightAPIUsageInspection"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.uast">
