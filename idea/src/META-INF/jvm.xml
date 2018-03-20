@@ -111,6 +111,8 @@
                                  implementationClass="org.jetbrains.kotlin.idea.debugger.surroundWith.KotlinDebuggerExpressionSurroundDescriptor"/>
 
         <editorNotificationProvider implementation="org.jetbrains.kotlin.idea.versions.UnsupportedAbiVersionNotificationPanelProvider"/>
+
+        <scratch.creationHelper language="kotlin" implementationClass="org.jetbrains.kotlin.idea.scratch.KotlinScratchFileCreationHelper" />
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.uast">

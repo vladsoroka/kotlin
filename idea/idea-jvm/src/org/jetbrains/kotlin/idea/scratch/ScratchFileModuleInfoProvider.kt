@@ -29,13 +29,10 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.FileAttribute
 import com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.caches.project.NotUnderContentRootModuleInfo
 import org.jetbrains.kotlin.idea.caches.project.moduleInfo
 import org.jetbrains.kotlin.idea.caches.project.productionSourceInfo
 import org.jetbrains.kotlin.idea.caches.project.testSourceInfo
-import org.jetbrains.kotlin.idea.util.application.runWriteAction
-import org.jetbrains.kotlin.parsing.KotlinParserDefinition.Companion.STD_SCRIPT_EXT
 import org.jetbrains.kotlin.parsing.KotlinParserDefinition.Companion.STD_SCRIPT_SUFFIX
 import org.jetbrains.kotlin.psi.KtFile
 import kotlin.reflect.KProperty
@@ -52,26 +49,12 @@ class ScratchFileModuleInfoProvider(project: Project) : AbstractProjectComponent
             if (!file.isValid) return
             if (!ScratchFileService.isInScratchRoot(file)) return
 
-            val ktFile = PsiManager.getInstance(myProject).findFile(file) as? KtFile ?: return
-
-            // Hack before api in IDEA will be introduced
-            if (file.extension == KotlinFileType.EXTENSION) {
-                runWriteAction {
-                    var newName = file.nameWithoutExtension + STD_SCRIPT_EXT
-                    var i = 1
-                    while (file.parent.findChild(newName) != null) {
-                        newName = file.nameWithoutExtension + "_" + i + STD_SCRIPT_EXT
-                        i++
-                    }
-                    file.rename(this, newName)
-                }
-            }
-
             if (file.extension != STD_SCRIPT_SUFFIX) {
                 LOG.error("Kotlin Scratch file should have .kts extension. Cannot add scratch panel for ${file.path}")
                 return
             }
 
+            val ktFile = PsiManager.getInstance(myProject).findFile(file) as? KtFile ?: return
             val scratchPanel = getEditorWithScratchPanel(source, file)?.second
             scratchPanel?.addModuleListener { psiFile, module ->
                 psiFile.moduleInfo = getModuleInfo(module)
