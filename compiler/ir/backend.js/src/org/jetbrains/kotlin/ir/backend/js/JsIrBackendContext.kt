@@ -28,7 +28,6 @@ class JsIrBackendContext(
     irModuleFragment: IrModuleFragment,
     symbolTable: SymbolTable
 ) : CommonBackendContext {
-
     override val builtIns = module.builtIns
     override val sharedVariablesManager = JsSharedVariablesManager(builtIns)
 
@@ -41,7 +40,7 @@ class JsIrBackendContext(
         override val symbols: Symbols<CommonBackendContext> = object : Symbols<CommonBackendContext>(this@JsIrBackendContext, symbolTable) {
 
             override val areEqual
-                get () = symbolTable.referenceSimpleFunction(context.getInternalFunctions("areEqual").single())
+                get () = TODO("not implemented")
 
             override val ThrowNullPointerException
                 get () = TODO("not implemented")
@@ -52,14 +51,13 @@ class JsIrBackendContext(
             override val ThrowTypeCastException
                 get () = TODO("not implemented")
 
-            override val ThrowUninitializedPropertyAccessException =
-                IrSimpleFunctionSymbolImpl(
-                    irBuiltIns.defineOperator(
-                        "throwUninitializedPropertyAccessException",
-                        builtIns.nothingType,
-                        listOf(builtIns.stringType)
-                    ).descriptor
-                )
+            override val ThrowUninitializedPropertyAccessException = symbolTable.referenceSimpleFunction(
+                irBuiltIns.defineOperator(
+                    "throwUninitializedPropertyAccessException",
+                    builtIns.nothingType,
+                    listOf(builtIns.stringType)
+                ).descriptor
+            )
 
             override val stringBuilder
                 get() = TODO("not implemented")
@@ -91,14 +89,7 @@ class JsIrBackendContext(
     }
 
     override fun getInternalFunctions(name: String): List<FunctionDescriptor> {
-        return when (name) {
-            "ThrowUninitializedPropertyAccessException" ->
-                getInternalClass("Intrinsics").staticScope.getContributedFunctions(
-                    Name.identifier("throwUninitializedPropertyAccessException"),
-                    NoLookupLocation.FROM_BACKEND
-                ).toList()
-            else -> TODO(name)
-        }
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun log(message: () -> String) {

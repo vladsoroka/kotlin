@@ -149,6 +149,9 @@ fun IrBuilderWithScope.irCall(callee: IrFunctionSymbol, type: KotlinType): IrCal
 fun IrBuilderWithScope.irCall(callee: IrFunctionSymbol): IrCall =
     irCall(callee, callee.descriptor.returnType!!)
 
+fun IrBuilderWithScope.irCall(callee: IrSimpleFunctionSymbol): IrCall =
+    irCall(callee, callee.owner.returnType)
+
 fun IrBuilderWithScope.irCallOp(callee: IrFunctionSymbol, dispatchReceiver: IrExpression, argument: IrExpression): IrCall =
     irCall(callee, callee.descriptor.returnType!!).apply {
         this.dispatchReceiver = dispatchReceiver

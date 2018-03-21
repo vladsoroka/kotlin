@@ -139,13 +139,13 @@ abstract class Symbols<out T: CommonBackendContext>(val context: T, private val 
 
     abstract val copyRangeTo: Map<ClassDescriptor, IrSimpleFunctionSymbol>
 
-    val intAnd = symbolTable.referenceFunction(
+    val intAnd = symbolTable.referenceSimpleFunction(
             builtIns.intType.memberScope
                     .getContributedFunctions(OperatorNameConventions.AND, NoLookupLocation.FROM_BACKEND)
                     .single()
     )
 
-    val intPlusInt = symbolTable.referenceFunction(
+    val intPlusInt = symbolTable.referenceSimpleFunction(
             builtIns.intType.memberScope
                     .getContributedFunctions(OperatorNameConventions.PLUS, NoLookupLocation.FROM_BACKEND)
                     .single {

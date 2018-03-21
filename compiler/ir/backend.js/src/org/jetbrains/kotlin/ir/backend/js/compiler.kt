@@ -7,9 +7,13 @@ package org.jetbrains.kotlin.ir.backend.js
 
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.backend.common.lower.LateinitLowering
+import org.jetbrains.kotlin.backend.common.lower.LocalFunctionsLowering
+import org.jetbrains.kotlin.backend.common.lower.PropertiesLowering
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.ir.backend.js.transformers.irToJs.IrModuleToJsTransformer
 import org.jetbrains.kotlin.ir.declarations.IrFile
+import org.jetbrains.kotlin.ir.util.ExternalDependenciesGenerator
+import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.js.analyze.TopDownAnalyzerFacadeForJS
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.progress.ProgressIndicatorAndCompilationCanceledStatus
@@ -34,6 +38,8 @@ fun compile(
 
     val context = JsIrBackendContext(analysisResult.moduleDescriptor, psi2IrContext.irBuiltIns, moduleFragment, psi2IrContext.symbolTable)
 
+    ExternalDependenciesGenerator(psi2IrContext.symbolTable, psi2IrContext.irBuiltIns).generateUnboundSymbolsAsDependencies(moduleFragment)
+
     moduleFragment.files.forEach { context.lower(it) }
 
     val program = moduleFragment.accept(IrModuleToJsTransformer(), null)
@@ -43,4 +49,6 @@ fun compile(
 
 fun JsIrBackendContext.lower(file: IrFile) {
     LateinitLowering(this, true).lower(file)
+    LocalFunctionsLowering(this).lower(file)
+    PropertiesLowering().lower(file)
 }

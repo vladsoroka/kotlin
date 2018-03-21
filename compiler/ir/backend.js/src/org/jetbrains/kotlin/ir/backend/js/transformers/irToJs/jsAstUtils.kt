@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.ir.backend.js.transformers.irToJs
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.js.backend.ast.JsDynamicScope
 import org.jetbrains.kotlin.js.backend.ast.JsVars
+import org.jetbrains.kotlin.js.naming.NameSuggestion
 import org.jetbrains.kotlin.name.Name
 
 // TODO don't use JsDynamicScope
@@ -15,9 +16,11 @@ val dummyScope = JsDynamicScope
 
 fun Name.toJsName() =
     // TODO sanitize
-    dummyScope.declareName(asString())
+    dummyScope.declareName(asString().sanitize())
 
 fun jsVar(name: Name, initializer: IrExpression?): JsVars {
     val jsInitializer = initializer?.accept(IrElementToJsExpressionTransformer(), null)
     return JsVars(JsVars.JsVar(name.toJsName(), jsInitializer))
 }
+
+fun String.sanitize() = NameSuggestion.sanitizeName(this)

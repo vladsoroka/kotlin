@@ -40,7 +40,7 @@ class IrElementToJsExpressionTransformer : BaseIrElementToJsNodeTransformer<JsEx
         val extensionReceiver = expression.extensionReceiver?.accept(this, data)
 
         // TODO sanitize name
-        val symbolName = (symbol.owner as IrSimpleFunction).name.asString()
+        val symbolName = (symbol.owner as IrSimpleFunction).name.asString().sanitize()
         val ref = if (dispatchReceiver != null) JsNameRef(symbolName, dispatchReceiver) else JsNameRef(symbolName)
 
         val arguments =
@@ -56,7 +56,7 @@ class IrElementToJsExpressionTransformer : BaseIrElementToJsNodeTransformer<JsEx
 
 
         if (symbol is IrConstructorSymbol && symbol.isPrimary) {
-            return JsNew(JsNameRef((symbol.owner.parent as IrClass).name.asString()), arguments)
+            return JsNew(JsNameRef((symbol.owner.parent as IrClass).name.asString().sanitize()), arguments)
         }
 
         return JsInvocation(ref, extensionReceiver?.let { listOf(extensionReceiver) + arguments } ?: arguments)
